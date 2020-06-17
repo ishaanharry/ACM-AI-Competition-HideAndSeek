@@ -6,18 +6,29 @@ import sys
 def getDistance(x1, y1, x2, y2):
     return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
-def greedy(current, target):
+def chooseRandom(unit, map):
+    direction = Direction.STILL
+    (x, y) = (unit.x, unit.y)
+    while(direction==Direction.STILL or 
+        x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
+        map[y][x]!=0):
+        direction = random.choice(list(Direction))
+        (x, y) = apply_direction(unit.x, unit.y, direction.value)
+    return direction
+
+def greedy(current, target, map):
     bestDirection = None
     closestDistance = math.inf
-
     for direction in Direction:
-        if(direction==Direction.STILL): continue
         (x, y) = apply_direction(current.x, current.y, direction.value)
+        if(direction==Direction.STILL or 
+            x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
+            map[y][x]!=0):
+            continue
         distance = getDistance(x, y, target.x, target.y)
         if (distance < closestDistance):
             bestDirection = direction
             closestDistance = distance
-    
     return bestDirection
 
 
@@ -47,37 +58,33 @@ while True:
             # anything else is then the id of a unit which can be yours or the opponents
 
             
-             # choose a random direction to move in
-            direction = random.choice(list(Direction)).value
-            
-            
-            if(len(opposingUnits)!=0):
-                closestEnemy = opposingUnits[0]
-                direction = greedy(unit, closestEnemy).value
-            
-            """
-            # choose direction based on greedy algorithm
-            direction = Direction.STILL.value
-            if (len(opposingUnits)==0):
-                direction = random.choice(list(Direction)).value
+            # choose a random direction to move in
+            if(len(opposingUnits)==0):
+                (x, y) = apply_direction(unit.x, unit.y, unit.currentDirection.value)
+                if(unit.currentDirection==Direction.STILL or
+                    x<0 or y<0 or x>=len(game_map[0]) or y >= len(game_map) or
+                    game_map[y][x]!=0):
+                    
+                    #direction = chooseRandom(unit, game_map)
+                    direction = Direction.SOUTH
+                    unit.setDirection(direction)
+                    
+                
+                else:
+                    direction = unit.currentDirection
+                
             else:
-                
                 closestEnemy = opposingUnits[0]
-                for enemy in opposingUnits:
-                    distance = getDistance(unit.x, unit,y, enemy.x, enemy.y)
-                    if distance == unit.distance:
-                        closestEnemy = enemy
-                
-                direction = greedy(unit, closestEnemy)
-            """
+                direction = greedy(unit, closestEnemy, game_map)    
+            
 
             # apply direction to current unit's position to check if that new position is on the game map
-            (x, y) = apply_direction(unit.x, unit.y, direction)
+            (x, y) = apply_direction(unit.x, unit.y, direction.value)
             if (x < 0 or y < 0 or x >= len(game_map[0]) or y >= len(game_map)):
                 # we do nothing if the new position is not in the map
                 pass
             else:
-                commands.append(unit.move(direction))
+                commands.append(unit.move(direction.value))
         
     else:
         # AI Code for hider goes here

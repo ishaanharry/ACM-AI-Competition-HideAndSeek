@@ -59,9 +59,13 @@ class Unit:
         self.x = x
         self.y = y
         self.distance = dist
+        self.currentDirection = Direction.NORTH
 
     def move(self, dir: int) -> str:
         return "%d_%d" % (self.id, dir)
+
+    def setDirection(self, newDirection):
+        self.currentDirection = newDirection
 
 
 class Agent:
