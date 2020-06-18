@@ -38,6 +38,8 @@ agent = Agent()
 # initialize agent
 agent.initialize()
 
+currentDirections = {}
+
 while True:
 
     commands = []
@@ -50,6 +52,7 @@ while True:
     if (agent.team == Team.SEEKER):
         # AI Code for seeker goes here
 
+        index = 0
         for _, unit in enumerate(units):
             # unit.id is id of the unit
             # unit.x unit.y are its coordinates, unit.distance is distance away from nearest opponent
@@ -60,18 +63,20 @@ while True:
             
             # choose a random direction to move in
             if(len(opposingUnits)==0):
-                (x, y) = apply_direction(unit.x, unit.y, unit.currentDirection.value)
-                if(unit.currentDirection==Direction.STILL or
+                if index not in currentDirections:
+                    currentDirections[index] = Direction.STILL
+                
+                (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
+                
+                if(currentDirections[index]==Direction.STILL or
                     x<0 or y<0 or x>=len(game_map[0]) or y >= len(game_map) or
                     game_map[y][x]!=0):
                     
-                    #direction = chooseRandom(unit, game_map)
-                    direction = Direction.SOUTH
-                    unit.setDirection(direction)
+                    currentDirections[index] = chooseRandom(unit, game_map)
+                    direction = currentDirections[index]
                     
-                
                 else:
-                    direction = unit.currentDirection
+                    direction = currentDirections[index]
                 
             else:
                 closestEnemy = opposingUnits[0]
@@ -85,6 +90,7 @@ while True:
                 pass
             else:
                 commands.append(unit.move(direction.value))
+            index += 1
         
     else:
         # AI Code for hider goes here
