@@ -93,10 +93,16 @@ while True:
             index += 1
         
     else:
-        # AI Code for hider goes here
-        # hider code, which does nothing, sits tight and hopes it doesn't get 
-        # found by seekers
-        pass
+        for _, unit in enumerate(units):
+            direction = chooseRandom(unit, game_map)
+
+            # apply direction to current unit's position to check if that new position is on the game map
+            (x, y) = apply_direction(unit.x, unit.y, direction.value)
+            if (x < 0 or y < 0 or x >= len(game_map[0]) or y >= len(game_map)):
+                # we do nothing if the new position is not in the map
+                pass
+            else:
+                commands.append(unit.move(direction.value))
 
 
 
