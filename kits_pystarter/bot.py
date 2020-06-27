@@ -3,12 +3,20 @@ import math
 import random 
 import sys
 
+# gets the distance between two points on the map
+# x1, y1 the x and y coordinates of the first point
+# x2, y2 the x and y coordinatex of the second point
+# returns the distance between the two points
 def getDistance(x1, y1, x2, y2):
     return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
+# chooses a random legal direction given the unit and map
+# returns a direction that the unit can legally move in
 def chooseRandom(unit, map):
     direction = Direction.STILL
     (x, y) = (unit.x, unit.y)
+    # keep choosing a random direction until the direction is legal
+    # also prevents unit from standing still
     while(direction==Direction.STILL or 
         x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
         map[y][x]!=0):
@@ -16,29 +24,60 @@ def chooseRandom(unit, map):
         (x, y) = apply_direction(unit.x, unit.y, direction.value)
     return direction
 
+# implementation of greedy algorithm for seeker to chase hider
+# given the current seeker unit, its target, and the map
+# returns the direction that will move the seeker closest to the hider
 def greedy(current, target, map):
     bestDirection = None
     closestDistance = math.inf
+    # for each possible direction, figure out its distance to the target
     for direction in Direction:
         (x, y) = apply_direction(current.x, current.y, direction.value)
+        # if direction is still or not legal, continue with the loop
         if(direction==Direction.STILL or 
             x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
             map[y][x]!=0):
             continue
+        # figure out the shortest distance
         distance = getDistance(x, y, target.x, target.y)
         if (distance < closestDistance):
             bestDirection = direction
             closestDistance = distance
+    # return the best direction
     return bestDirection
 
+# to keep track of the directions that each unit is "facing"
+currentDirections = {}
+
+# chooses a direction for the given unit to move
+# based on how an ant explores a new area
+# basically it moves in a straight line until it encounters an obstacle
+# then it chooses a random direction to continue in
+# index is the index of the unit in the currentDirections list
+# returns the direction the unit must continue in
+def chooseAntDirection(unit, index, map):
+    if index not in currentDirections:
+        currentDirections[index] = Direction.STILL
+                
+    (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
+    # if unit hits a wall or has no assigned direction            
+    if(currentDirections[index]==Direction.STILL or
+        x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
+        map[y][x]!=0):
+        # assign a random direction for it            
+        currentDirections[index] = chooseRandom(unit, map)
+        direction = currentDirections[index]
+    # otherwise, continue in its current direction                
+    else:
+        direction = currentDirections[index]
+
+    return direction
 
 # Create new agent
 agent = Agent()
 
 # initialize agent
 agent.initialize()
-
-currentDirections = {}
 
 while True:
 
@@ -52,7 +91,7 @@ while True:
     if (agent.team == Team.SEEKER):
         # AI Code for seeker goes here
 
-        index = 0
+        index = 0       #index for keeping track of units in currentDirections list
         for _, unit in enumerate(units):
             # unit.id is id of the unit
             # unit.x unit.y are its coordinates, unit.distance is distance away from nearest opponent
@@ -61,23 +100,10 @@ while True:
             # anything else is then the id of a unit which can be yours or the opponents
 
             
-            # choose a random direction to move in
+            # if no hiders seen, move like an ant exploring a new area
             if(len(opposingUnits)==0):
-                if index not in currentDirections:
-                    currentDirections[index] = Direction.STILL
-                
-                (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
-                
-                if(currentDirections[index]==Direction.STILL or
-                    x<0 or y<0 or x>=len(game_map[0]) or y >= len(game_map) or
-                    game_map[y][x]!=0):
-                    
-                    currentDirections[index] = chooseRandom(unit, game_map)
-                    direction = currentDirections[index]
-                    
-                else:
-                    direction = currentDirections[index]
-                
+                direction = chooseAntDirection(unit, index, game_map)
+            # if hiders seen, apply basic greedy alorithm to move closer to it
             else:
                 closestEnemy = opposingUnits[0]
                 direction = greedy(unit, closestEnemy, game_map)    
@@ -93,6 +119,7 @@ while True:
             index += 1
         
     else:
+        index = 0
         for _, unit in enumerate(units):
             direction = chooseRandom(unit, game_map)
 
@@ -103,6 +130,8 @@ while True:
                 pass
             else:
                 commands.append(unit.move(direction.value))
+            
+            index += 1
 
 
 
