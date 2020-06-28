@@ -73,6 +73,31 @@ def chooseAntDirection(unit, index, map):
 
     return direction
 
+def chooseHiderDirection(unit, index, map):
+    
+    if index not in currentDirections:
+        currentDirections[index] = Direction.NORTH
+    
+    (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
+    
+    if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
+        currentDirections[index] = Direction((currentDirections[index].value - 2) % 8)
+    
+    i = 0
+    (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
+    while(x<0 or y<0 or x>=len(map[0]) or y >= len(map) or 
+        map[y][x]==1):
+        i += 1
+        (x, y) = apply_direction(unit.x, unit.y, (currentDirections[index].value + i) % 8)
+        """
+        if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
+            i += 3
+        else:
+            i += 1
+        """
+    
+    return Direction((currentDirections[index].value + i) % 8)
+    
 # Create new agent
 agent = Agent()
 
@@ -99,7 +124,6 @@ while True:
             # game_map[i][j] returns whats on that tile, 0 = empty, 1 = wall, 
             # anything else is then the id of a unit which can be yours or the opponents
 
-            
             # if no hiders seen, move like an ant exploring a new area
             if(len(opposingUnits)==0):
                 direction = chooseAntDirection(unit, index, game_map)
@@ -108,7 +132,6 @@ while True:
                 closestEnemy = opposingUnits[0]
                 direction = greedy(unit, closestEnemy, game_map)    
             
-
             # apply direction to current unit's position to check if that new position is on the game map
             (x, y) = apply_direction(unit.x, unit.y, direction.value)
             if (x < 0 or y < 0 or x >= len(game_map[0]) or y >= len(game_map)):
@@ -116,12 +139,15 @@ while True:
                 pass
             else:
                 commands.append(unit.move(direction.value))
+
             index += 1
         
     else:
         index = 0
         for _, unit in enumerate(units):
-            direction = chooseRandom(unit, game_map)
+            direction = chooseHiderDirection(unit, index, game_map)
+            #currentDirections[index] = Direction.NORTH
+            
 
             # apply direction to current unit's position to check if that new position is on the game map
             (x, y) = apply_direction(unit.x, unit.y, direction.value)
