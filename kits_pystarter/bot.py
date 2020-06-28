@@ -73,10 +73,24 @@ def chooseAntDirection(unit, index, map):
 
     return direction
 
+def dirToClosestWall(unit, map):
+    distances = {
+        Direction.NORTH : 0,
+        Direction.SOUTH : 0,
+        Direction.WEST : 0,
+        Direction.EAST : 0
+    }
+    distances[Direction.NORTH] = getDistance(unit.x, unit.y, unit.x, 0)
+    distances[Direction.SOUTH] = getDistance(unit.x, unit.y, unit.x, len(map))
+    distances[Direction.WEST] = getDistance(unit.x, unit.y, 0, unit.y)
+    distances[Direction.EAST] = getDistance(unit.x, unit.y, len(map[0]), unit.y)
+
+    return min(distances, key=distances.get)
+
 def chooseHiderDirection(unit, index, map):
     
     if index not in currentDirections:
-        currentDirections[index] = Direction.NORTH
+        currentDirections[index] = dirToClosestWall(unit, map)
     
     (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
     
@@ -89,12 +103,6 @@ def chooseHiderDirection(unit, index, map):
         map[y][x]==1):
         i += 1
         (x, y) = apply_direction(unit.x, unit.y, (currentDirections[index].value + i) % 8)
-        """
-        if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
-            i += 3
-        else:
-            i += 1
-        """
     
     return Direction((currentDirections[index].value + i) % 8)
     
