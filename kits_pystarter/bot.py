@@ -10,6 +10,21 @@ import sys
 def getDistance(x1, y1, x2, y2):
     return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
+def isAtWall(unit, map):
+    (x, y) = apply_direction(unit.x, unit.y, Direction.NORTH.value)
+    if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
+        return True
+    (x, y) = apply_direction(unit.x, unit.y, Direction.EAST.value)
+    if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
+        return True
+    (x, y) = apply_direction(unit.x, unit.y, Direction.SOUTH.value)
+    if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
+        return True
+    (x, y) = apply_direction(unit.x, unit.y, Direction.WEST.value)
+    if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
+        return True
+    return False
+
 # chooses a random legal direction given the unit and map
 # returns a direction that the unit can legally move in
 def chooseRandom(unit, map):
@@ -49,6 +64,9 @@ def greedy(current, target, map):
 # to keep track of the directions that each unit is "facing"
 currentDirections = {}
 
+# keep track of when unit reaches wall if it was initially heading there
+reachedWall = {}
+
 # chooses a direction for the given unit to move
 # based on how an ant explores a new area
 # basically it moves in a straight line until it encounters an obstacle
@@ -73,38 +91,79 @@ def chooseAntDirection(unit, index, map):
 
     return direction
 
-def dirToClosestWall(unit, map):
+def getClosestWall(unit, map):
     distances = {
-        Direction.NORTH : 0,
-        Direction.SOUTH : 0,
-        Direction.WEST : 0,
-        Direction.EAST : 0
+        (unit.x, -1) : math.inf,            # North wall
+        (unit.x, len(map)) : math.inf,     # South wall
+        (-1, unit.y) : math.inf,            # West wall
+        (len(map[0]), unit.y) : math.inf   # East wall
     }
-    distances[Direction.NORTH] = getDistance(unit.x, unit.y, unit.x, 0)
-    distances[Direction.SOUTH] = getDistance(unit.x, unit.y, unit.x, len(map))
-    distances[Direction.WEST] = getDistance(unit.x, unit.y, 0, unit.y)
-    distances[Direction.EAST] = getDistance(unit.x, unit.y, len(map[0]), unit.y)
+    distances[(unit.x, -1)] = getDistance(unit.x, unit.y, unit.x, -1)
+    distances[(unit.x, len(map))] = getDistance(unit.x, unit.y, unit.x, len(map))
+    distances[(-1, unit.y)] = getDistance(unit.x, unit.y, -1, unit.y)
+    distances[(len(map[0]), unit.y)] = getDistance(unit.x, unit.y, len(map[0]), unit.y)
 
     return min(distances, key=distances.get)
+
+def goToWall(unit, map):
+    (targetx, targety) = getClosestWall(unit, map)
+    possibleDirections = {}
+    for direction in Direction:
+        (x, y) = apply_direction(unit.x, unit.y, direction.value)
+        if(direction==Direction.STILL or map[y][x]!=0):
+            possibleDirections[direction] = math.inf
+        else:
+            possibleDirections[direction] = getDistance(x, y, targetx, targety)
+    bestDirection = min(possibleDirections, key=possibleDirections.get)
+    # (x, y) = apply_direction(unit.x, unit.y, bestDirection.value)
+    # if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
+    #     reachedWall = True
+    return bestDirection
+
+    # bestDirection = None
+    # closestDistance = math.inf
+    # # for each possible direction, figure out its distance to the target
+    # for direction in Direction:
+    #     (x, y) = apply_direction(current.x, current.y, direction.value)
+    #     # if direction is still or not legal, continue with the loop
+    #     if(direction==Direction.STILL or 
+    #         x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
+    #         map[y][x]!=0):
+    #         continue
+    #     # figure out the shortest distance
+    #     distance = getDistance(x, y, target.x, target.y)
+    #     if (distance < closestDistance):
+    #         bestDirection = direction
+    #         closestDistance = distance
+    # # return the best direction
+    # return bestDirection
 
 def chooseHiderDirection(unit, index, map):
     
     if index not in currentDirections:
-        currentDirections[index] = dirToClosestWall(unit, map)
+        currentDirections[index] = goToWall(unit, map)
     
     (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
     
     if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
         currentDirections[index] = Direction((currentDirections[index].value - 2) % 8)
     
-    i = 0
-    (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
+    i = 2
+    (x, y) = apply_direction(unit.x, unit.y, (currentDirections[index].value + i) % 8)
+    direction = Direction((currentDirections[index].value + i) % 8)
     while(x<0 or y<0 or x>=len(map[0]) or y >= len(map) or 
-        map[y][x]==1):
-        i += 1
-        (x, y) = apply_direction(unit.x, unit.y, (currentDirections[index].value + i) % 8)
+        map[y][x]!=0):
+        # (x, y) = apply_direction(unit.x, unit.y, (currentDirections[index].value + 2) % 8)
+        # if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
+        #     i -= 1
+        # else:
+        #     i += 1
+        i -= 1
+        direction = Direction((currentDirections[index].value + i) % 8)
+        (x, y) = apply_direction(unit.x, unit.y, direction.value)
     
-    return Direction((currentDirections[index].value + i) % 8)
+    currentDirections[index] = direction
+    return direction
     
 # Create new agent
 agent = Agent()
@@ -153,7 +212,24 @@ while True:
     else:
         index = 0
         for _, unit in enumerate(units):
-            direction = chooseHiderDirection(unit, index, game_map)
+            if index not in reachedWall:
+                reachedWall[index] = False
+
+            if(isAtWall(unit, game_map)):
+                reachedWall[index] = True
+                
+            if not reachedWall[index]:
+                direction = goToWall(unit, game_map)
+                currentDirections[index] = direction
+                # (x, y) = apply_direction(unit.x, unit.y, direction.value)
+                # if (x < 0 or y < 0 or x >= len(game_map[0]) or y >= len(game_map)):
+                #     reachedWall[index] = True
+                #     direction = chooseHiderDirection(unit, index, game_map)
+            else:
+                if index not in currentDirections:
+                    currentDirections[index] = goToWall(unit, game_map)
+                    #pass
+                direction = chooseHiderDirection(unit, index, game_map)
             #currentDirections[index] = Direction.NORTH
             
 
