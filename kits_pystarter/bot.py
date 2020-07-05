@@ -110,7 +110,9 @@ def goToWall(unit, map):
     possibleDirections = {}
     for direction in Direction:
         (x, y) = apply_direction(unit.x, unit.y, direction.value)
-        if(direction==Direction.STILL or map[y][x]!=0):
+        if(direction==Direction.STILL or 
+            x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
+            map[y][x]!=0):
             possibleDirections[direction] = math.inf
         else:
             possibleDirections[direction] = getDistance(x, y, targetx, targety)
