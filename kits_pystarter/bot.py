@@ -74,20 +74,20 @@ reachedWall = {}
 # index is the index of the unit in the currentDirections list
 # returns the direction the unit must continue in
 def chooseAntDirection(unit, index, map):
-    if index not in currentDirections:
-        currentDirections[index] = Direction.STILL
+    if unit.id not in currentDirections:
+        currentDirections[unit.id] = Direction.STILL
                 
-    (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
+    (x, y) = apply_direction(unit.x, unit.y, currentDirections[unit.id].value)
     # if unit hits a wall or has no assigned direction            
-    if(currentDirections[index]==Direction.STILL or
+    if(currentDirections[unit.id]==Direction.STILL or
         x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
         map[y][x]!=0):
         # assign a random direction for it            
-        currentDirections[index] = chooseRandom(unit, map)
-        direction = currentDirections[index]
+        currentDirections[unit.id] = chooseRandom(unit, map)
+        direction = currentDirections[unit.id]
     # otherwise, continue in its current direction                
     else:
-        direction = currentDirections[index]
+        direction = currentDirections[unit.id]
 
     return direction
 
@@ -140,29 +140,29 @@ def goToWall(unit, map):
 
 def chooseHiderDirection(unit, index, map):
     
-    if index not in currentDirections:
-        currentDirections[index] = goToWall(unit, map)
+    if unit.id not in currentDirections:
+        currentDirections[unit.id] = goToWall(unit, map)
     
-    (x, y) = apply_direction(unit.x, unit.y, currentDirections[index].value)
+    (x, y) = apply_direction(unit.x, unit.y, currentDirections[unit.id].value)
     
     if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
-        currentDirections[index] = Direction((currentDirections[index].value - 2) % 8)
+        currentDirections[unit.id] = Direction((currentDirections[unit.id].value - 2) % 8)
     
     i = 2
-    (x, y) = apply_direction(unit.x, unit.y, (currentDirections[index].value + i) % 8)
-    direction = Direction((currentDirections[index].value + i) % 8)
+    (x, y) = apply_direction(unit.x, unit.y, (currentDirections[unit.id].value + i) % 8)
+    direction = Direction((currentDirections[unit.id].value + i) % 8)
     while(x<0 or y<0 or x>=len(map[0]) or y >= len(map) or 
         map[y][x]!=0):
-        # (x, y) = apply_direction(unit.x, unit.y, (currentDirections[index].value + 2) % 8)
+        # (x, y) = apply_direction(unit.x, unit.y, (currentDirections[unit.id].value + 2) % 8)
         # if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
         #     i -= 1
         # else:
         #     i += 1
         i -= 1
-        direction = Direction((currentDirections[index].value + i) % 8)
+        direction = Direction((currentDirections[unit.id].value + i) % 8)
         (x, y) = apply_direction(unit.x, unit.y, direction.value)
     
-    currentDirections[index] = direction
+    currentDirections[unit.id] = direction
     return direction
     
 # Create new agent
@@ -212,25 +212,25 @@ while True:
     else:
         index = 0
         for _, unit in enumerate(units):
-            if index not in reachedWall:
-                reachedWall[index] = False
+            if unit.id not in reachedWall:
+                reachedWall[unit.id] = False
 
             if(isAtWall(unit, game_map)):
-                reachedWall[index] = True
-                
-            if not reachedWall[index]:
+                reachedWall[unit.id] = True
+
+            if not reachedWall[unit.id]:
                 direction = goToWall(unit, game_map)
-                currentDirections[index] = direction
+                currentDirections[unit.id] = direction
                 # (x, y) = apply_direction(unit.x, unit.y, direction.value)
                 # if (x < 0 or y < 0 or x >= len(game_map[0]) or y >= len(game_map)):
-                #     reachedWall[index] = True
+                #     reachedWall[unit.id] = True
                 #     direction = chooseHiderDirection(unit, index, game_map)
             else:
-                if index not in currentDirections:
-                    currentDirections[index] = goToWall(unit, game_map)
+                if unit.id not in currentDirections:
+                    currentDirections[unit.id] = goToWall(unit, game_map)
                     #pass
                 direction = chooseHiderDirection(unit, index, game_map)
-            #currentDirections[index] = Direction.NORTH
+            #currentDirections[unit.id] = Direction.NORTH
             
 
             # apply direction to current unit's position to check if that new position is on the game map
