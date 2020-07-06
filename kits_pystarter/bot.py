@@ -10,6 +10,8 @@ import sys
 def getDistance(x1, y1, x2, y2):
     return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
+# determine if unit is next to the wall
+# returns true if it is
 def isAtWall(unit, map):
     (x, y) = apply_direction(unit.x, unit.y, Direction.NORTH.value)
     if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
@@ -71,9 +73,10 @@ reachedWall = {}
 # based on how an ant explores a new area
 # basically it moves in a straight line until it encounters an obstacle
 # then it chooses a random direction to continue in
-# index is the index of the unit in the currentDirections list
+# i̶n̶d̶e̶x̶ i̶s̶ t̶h̶e̶ i̶n̶d̶e̶x̶ o̶f̶ t̶h̶e̶ u̶n̶i̶t̶ i̶n̶ t̶h̶e̶ c̶u̶r̶r̶e̶n̶t̶D̶i̶r̶e̶c̶t̶i̶o̶n̶s̶ l̶i̶s̶t̶
+# index has been deprecated :)
 # returns the direction the unit must continue in
-def chooseAntDirection(unit, index, map):
+def chooseAntDirection(unit, map):
     if unit.id not in currentDirections:
         currentDirections[unit.id] = Direction.STILL
                 
@@ -91,56 +94,48 @@ def chooseAntDirection(unit, index, map):
 
     return direction
 
+# determines which wall is closest to the unit
+# returns the point on the closest wall
+# that is closest to the unit in the form (x, y)
 def getClosestWall(unit, map):
+    # Dictionary with the points on each wall
+    # that are closest to the unit
     distances = {
         (unit.x, -1) : math.inf,            # North wall
         (unit.x, len(map)) : math.inf,     # South wall
         (-1, unit.y) : math.inf,            # West wall
         (len(map[0]), unit.y) : math.inf   # East wall
     }
+    # map each key (point on the walls) to the distance that the unit is from that point
     distances[(unit.x, -1)] = getDistance(unit.x, unit.y, unit.x, -1)
     distances[(unit.x, len(map))] = getDistance(unit.x, unit.y, unit.x, len(map))
     distances[(-1, unit.y)] = getDistance(unit.x, unit.y, -1, unit.y)
     distances[(len(map[0]), unit.y)] = getDistance(unit.x, unit.y, len(map[0]), unit.y)
 
-    return min(distances, key=distances.get)
+    return min(distances, key=distances.get)    # return key of smallest value in Dictionary
 
+# returns direction that is closest to nearest wall
 def goToWall(unit, map):
+    # gets closest point to the closest wall
     (targetx, targety) = getClosestWall(unit, map)
+    # a Dictionary to keep track of possible directions to move
     possibleDirections = {}
     for direction in Direction:
         (x, y) = apply_direction(unit.x, unit.y, direction.value)
+        #discount illegal directions
         if(direction==Direction.STILL or 
             x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
             map[y][x]!=0):
-            possibleDirections[direction] = math.inf
+            pass
+        # map distances to each direction
         else:
             possibleDirections[direction] = getDistance(x, y, targetx, targety)
-    bestDirection = min(possibleDirections, key=possibleDirections.get)
-    # (x, y) = apply_direction(unit.x, unit.y, bestDirection.value)
-    # if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
-    #     reachedWall = True
-    return bestDirection
+    # return direction that is shortest
+    return min(possibleDirections, key=possibleDirections.get)
 
-    # bestDirection = None
-    # closestDistance = math.inf
-    # # for each possible direction, figure out its distance to the target
-    # for direction in Direction:
-    #     (x, y) = apply_direction(current.x, current.y, direction.value)
-    #     # if direction is still or not legal, continue with the loop
-    #     if(direction==Direction.STILL or 
-    #         x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
-    #         map[y][x]!=0):
-    #         continue
-    #     # figure out the shortest distance
-    #     distance = getDistance(x, y, target.x, target.y)
-    #     if (distance < closestDistance):
-    #         bestDirection = direction
-    #         closestDistance = distance
-    # # return the best direction
-    # return bestDirection
-
-def chooseHiderDirection(unit, index, map):
+# sticks to the right wall on the edge of the map
+# returns the proper direction for sticking to the right wall
+def chooseHiderDirection(unit, map):
     
     if unit.id not in currentDirections:
         currentDirections[unit.id] = goToWall(unit, map)
@@ -153,17 +148,15 @@ def chooseHiderDirection(unit, index, map):
     i = 2
     (x, y) = apply_direction(unit.x, unit.y, (currentDirections[unit.id].value + i) % 8)
     direction = Direction((currentDirections[unit.id].value + i) % 8)
+    # starts at direction right to current direction
+    # and checks if it as a valid location to move to
+    # then sequentially points counter-clockwise until a valid direction is found
     while(x<0 or y<0 or x>=len(map[0]) or y >= len(map) or 
         map[y][x]!=0):
-        # (x, y) = apply_direction(unit.x, unit.y, (currentDirections[unit.id].value + 2) % 8)
-        # if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
-        #     i -= 1
-        # else:
-        #     i += 1
         i -= 1
         direction = Direction((currentDirections[unit.id].value + i) % 8)
         (x, y) = apply_direction(unit.x, unit.y, direction.value)
-    
+    # update current facing direction and return direction to move
     currentDirections[unit.id] = direction
     return direction
     
@@ -180,22 +173,20 @@ while True:
     opposingUnits = agent.opposingUnits # list of units on other team that you can see
     game_map = agent.map # the map
     round_num = agent.round_num # the round number
-
+    # unit.id is id of the unit
+    # unit.x unit.y are its coordinates, unit.distance is distance away from nearest opponent
+    # game_map is the 2D map of what you can see. 
+    # game_map[i][j] returns whats on that tile, 0 = empty, 1 = wall, 
+    # anything else is then the id of a unit which can be yours or the opponents
     
     if (agent.team == Team.SEEKER):
         # AI Code for seeker goes here
 
-        index = 0       #index for keeping track of units in currentDirections list
+        index = 0       #index f̶o̶r̶ k̶e̶e̶p̶i̶n̶g̶ t̶r̶a̶c̶k̶ o̶f̶ u̶n̶i̶t̶s̶ i̶n̶ c̶u̶r̶r̶e̶n̶t̶D̶i̶r̶e̶c̶t̶i̶o̶n̶s̶ l̶i̶s̶t̶ is deprecated
         for _, unit in enumerate(units):
-            # unit.id is id of the unit
-            # unit.x unit.y are its coordinates, unit.distance is distance away from nearest opponent
-            # game_map is the 2D map of what you can see. 
-            # game_map[i][j] returns whats on that tile, 0 = empty, 1 = wall, 
-            # anything else is then the id of a unit which can be yours or the opponents
-
             # if no hiders seen, move like an ant exploring a new area
             if(len(opposingUnits)==0):
-                direction = chooseAntDirection(unit, index, game_map)
+                direction = chooseAntDirection(unit, game_map)
             # if hiders seen, apply basic greedy alorithm to move closer to it
             else:
                 closestEnemy = opposingUnits[0]
@@ -217,23 +208,17 @@ while True:
             if unit.id not in reachedWall:
                 reachedWall[unit.id] = False
 
-            if(isAtWall(unit, game_map)):
+            if isAtWall(unit, game_map):
                 reachedWall[unit.id] = True
 
+            # if initially not at wall, call goToWall until wall reached
             if not reachedWall[unit.id]:
                 direction = goToWall(unit, game_map)
                 currentDirections[unit.id] = direction
-                # (x, y) = apply_direction(unit.x, unit.y, direction.value)
-                # if (x < 0 or y < 0 or x >= len(game_map[0]) or y >= len(game_map)):
-                #     reachedWall[unit.id] = True
-                #     direction = chooseHiderDirection(unit, index, game_map)
+
+            # otherwise, procede with skrrrting around the edge of the map
             else:
-                if unit.id not in currentDirections:
-                    currentDirections[unit.id] = goToWall(unit, game_map)
-                    #pass
-                direction = chooseHiderDirection(unit, index, game_map)
-            #currentDirections[unit.id] = Direction.NORTH
-            
+                direction = chooseHiderDirection(unit, game_map)            
 
             # apply direction to current unit's position to check if that new position is on the game map
             (x, y) = apply_direction(unit.x, unit.y, direction.value)
