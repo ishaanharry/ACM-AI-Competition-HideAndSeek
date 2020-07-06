@@ -159,6 +159,19 @@ def chooseHiderDirection(unit, map):
     # update current facing direction and return direction to move
     currentDirections[unit.id] = direction
     return direction
+
+def isSufficientlySurrounded(unit, map):
+    surroundingObstacles = 0
+    for direction in Direction:
+        if(direction==Direction.STILL):
+            continue
+        (x, y) = apply_direction(unit.x, unit.y, direction.value)
+        if(x<0 or y<0 or x>=len(map[0]) or y >= len(map) or map[y][x]==1):
+            surroundingObstacles += 1
+    if(surroundingObstacles >= 6):
+        return True
+    else:
+        return False
     
 # Create new agent
 agent = Agent()
@@ -208,11 +221,14 @@ while True:
             if unit.id not in reachedWall:
                 reachedWall[unit.id] = False
 
-            if isAtWall(unit, game_map):
+            if (not reachedWall[unit.id]) and isAtWall(unit, game_map):
                 reachedWall[unit.id] = True
 
+            if isSufficientlySurrounded(unit, game_map):
+                direction = Direction.STILL
+
             # if initially not at wall, call goToWall until wall reached
-            if not reachedWall[unit.id]:
+            elif not reachedWall[unit.id]:
                 direction = goToWall(unit, game_map)
                 currentDirections[unit.id] = direction
 
