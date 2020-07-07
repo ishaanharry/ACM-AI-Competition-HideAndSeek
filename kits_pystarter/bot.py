@@ -62,6 +62,38 @@ def greedy(current, target, map):
             closestDistance = distance
     # return the best direction
     return bestDirection
+    # possibleDirections = {}
+    # for direction in Direction:
+    #     (x, y) = apply_direction(current.x, current.y, direction.value)
+    #     #discount illegal directions
+    #     if(direction==Direction.STILL or 
+    #         x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
+    #         map[y][x]!=0):
+    #         pass
+    #     # map distances to each direction
+    #     else:
+    #         possibleDirections[direction] = getDistance(x, y, target.x, target.y)
+    # # return direction that is shortest
+    # return min(possibleDirections, key=possibleDirections.get)
+
+def antiGreedy(current, enemy, map):
+    bestDirection = None
+    farthestDistance = 0
+    # for each possible direction, figure out its distance to the target
+    for direction in Direction:
+        (x, y) = apply_direction(current.x, current.y, direction.value)
+        # if direction is still or not legal, continue with the loop
+        if(direction==Direction.STILL or 
+            x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
+            map[y][x]!=0):
+            continue
+        # figure out the farthest distance
+        distance = getDistance(x, y, enemy.x, enemy.y)
+        if (distance > farthestDistance):
+            bestDirection = direction
+            farthestDistance = distance
+    # return the best direction
+    return bestDirection
 
 # to keep track of the directions that each unit is "facing"
 currentDirections = {}
@@ -135,14 +167,15 @@ def goToWall(unit, map):
 
 # sticks to the right wall on the edge of the map
 # returns the proper direction for sticking to the right wall
-def chooseHiderDirection(unit, map):
+def followRightWall(unit, map):
     
     if unit.id not in currentDirections:
         currentDirections[unit.id] = goToWall(unit, map)
     
     (x, y) = apply_direction(unit.x, unit.y, currentDirections[unit.id].value)
     
-    if(x<0 or y<0 or x>=len(map[0]) or y >= len(map)):
+    if((x<0 or y<0 or x>=len(map[0]) or y >= len(map))
+        and (currentDirections[unit.id].value % 2)==0):
         currentDirections[unit.id] = Direction((currentDirections[unit.id].value - 2) % 8)
     
     i = 2
@@ -179,6 +212,13 @@ agent = Agent()
 # initialize agent
 agent.initialize()
 
+numObstacles = 0
+for i in range(len(agent.map)):
+    for j in range(len(agent.map[i])):
+        if(agent.map[i][j]==1):
+            numObstacles += 1
+obstacleDensity = numObstacles/(len(agent.map) * len(agent.map[0]))
+
 while True:
 
     commands = []
@@ -197,13 +237,30 @@ while True:
 
         index = 0       #index f̶o̶r̶ k̶e̶e̶p̶i̶n̶g̶ t̶r̶a̶c̶k̶ o̶f̶ u̶n̶i̶t̶s̶ i̶n̶ c̶u̶r̶r̶e̶n̶t̶D̶i̶r̶e̶c̶t̶i̶o̶n̶s̶ l̶i̶s̶t̶ is deprecated
         for _, unit in enumerate(units):
+            if unit.id not in reachedWall:
+                reachedWall[unit.id] = False
+
             # if no hiders seen, move like an ant exploring a new area
             if(len(opposingUnits)==0):
-                direction = chooseAntDirection(unit, game_map)
+                if(obstacleDensity < 0.35):
+                    direction = chooseAntDirection(unit, game_map)
+                else:
+                    if (not reachedWall[unit.id]) and (isAtWall(unit, game_map) or isSufficientlySurrounded(unit, game_map)):
+                        reachedWall[unit.id] = True
+
+                    if not reachedWall[unit.id]:
+                        direction = goToWall(unit, game_map)
+                        currentDirections[unit.id] = direction
+
+                    else:
+                        direction = followRightWall(unit, game_map)
+
             # if hiders seen, apply basic greedy alorithm to move closer to it
             else:
+                reachedWall[unit.id] = False
                 closestEnemy = opposingUnits[0]
-                direction = greedy(unit, closestEnemy, game_map)    
+                direction = greedy(unit, closestEnemy, game_map)
+                currentDirections[unit.id] = direction
             
             # apply direction to current unit's position to check if that new position is on the game map
             (x, y) = apply_direction(unit.x, unit.y, direction.value)
@@ -223,6 +280,10 @@ while True:
 
             if (not reachedWall[unit.id]) and isAtWall(unit, game_map):
                 reachedWall[unit.id] = True
+                #currentDirections[unit.id] = Direction((goToWall(unit, game_map).value - 2) % 8)
+
+            # if(len(opposingUnits)!=0):
+            #     direction = antiGreedy(unit,)
 
             if isSufficientlySurrounded(unit, game_map):
                 direction = Direction.STILL
@@ -234,7 +295,7 @@ while True:
 
             # otherwise, procede with skrrrting around the edge of the map
             else:
-                direction = chooseHiderDirection(unit, game_map)            
+                direction = followRightWall(unit, game_map)            
 
             # apply direction to current unit's position to check if that new position is on the game map
             (x, y) = apply_direction(unit.x, unit.y, direction.value)
