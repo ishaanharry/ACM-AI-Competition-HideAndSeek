@@ -62,20 +62,10 @@ def greedy(current, target, map):
             closestDistance = distance
     # return the best direction
     return bestDirection
-    # possibleDirections = {}
-    # for direction in Direction:
-    #     (x, y) = apply_direction(current.x, current.y, direction.value)
-    #     #discount illegal directions
-    #     if(direction==Direction.STILL or 
-    #         x<0 or y<0 or x>=len(map[0]) or y >= len(map) or
-    #         map[y][x]!=0):
-    #         pass
-    #     # map distances to each direction
-    #     else:
-    #         possibleDirections[direction] = getDistance(x, y, target.x, target.y)
-    # # return direction that is shortest
-    # return min(possibleDirections, key=possibleDirections.get)
 
+# for hider to run away from seeker if too close
+# given the current hider, its enemy, and the map
+# returns the legal direction that moves the hider farthest from the seeker
 def antiGreedy(current, enemy, map):
     bestDirection = None
     farthestDistance = 0
@@ -193,6 +183,11 @@ def followRightWall(unit, map):
     currentDirections[unit.id] = direction
     return direction
 
+# checks if hider is sufficiently hidden by surrounding obstacles
+# given the hider unit and its map
+# checks if the unit is surrounded on at least 6 of 8 directions
+# returns true if it is, false otherwise
+# Note: this method only checks the locations immediately adjacent to the unit
 def isSufficientlySurrounded(unit, map):
     surroundingObstacles = 0
     for direction in Direction:
@@ -212,6 +207,8 @@ agent = Agent()
 # initialize agent
 agent.initialize()
 
+# this chunk of code is to determine the total obstacle density of the map
+# that is the number of obstacles divided by the total tiles
 numObstacles = 0
 for i in range(len(agent.map)):
     for j in range(len(agent.map[i])):
@@ -240,10 +237,13 @@ while True:
             if unit.id not in reachedWall:
                 reachedWall[unit.id] = False
 
-            # if no hiders seen, move like an ant exploring a new area
+            # if no hiders seen, explore the area
             if(len(opposingUnits)==0):
+                # at a low map density, move like an ant
+                # (move straight, change directions when hitting an obstacle)
                 if(obstacleDensity < 0.35):
                     direction = chooseAntDirection(unit, game_map)
+                # at high map density, get to wall and skrrrt around right wall
                 else:
                     if (not reachedWall[unit.id]) and (isAtWall(unit, game_map) or isSufficientlySurrounded(unit, game_map)):
                         reachedWall[unit.id] = True
@@ -273,18 +273,15 @@ while True:
             index += 1
         
     else:
-        index = 0
+        index = 0       # index is depracated
         for _, unit in enumerate(units):
+            # to keep track of units that need to get to the wall initally
             if unit.id not in reachedWall:
                 reachedWall[unit.id] = False
-
             if (not reachedWall[unit.id]) and isAtWall(unit, game_map):
                 reachedWall[unit.id] = True
-                #currentDirections[unit.id] = Direction((goToWall(unit, game_map).value - 2) % 8)
 
-            # if(len(opposingUnits)!=0):
-            #     direction = antiGreedy(unit,)
-
+            # if hider is sufficiently hidden by obstacles, just chill
             if isSufficientlySurrounded(unit, game_map):
                 direction = Direction.STILL
 
