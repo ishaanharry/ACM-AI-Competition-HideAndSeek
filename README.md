@@ -7,6 +7,7 @@ This is the bot I made to compete in ACM@UCSD's first AI Competition.  The chall
 My seeker has two different methods of searching the map until a hider comes into range:
 1. If the obstacle density of the map is less than 0.35, each seeker randomly moves in straight lines.  When it hits an obstacle or wall, it chooses a new direction and continues moving in a straight line (in my code I called this function "chooseAntDirection" because this is roughly how a colony of ants explore a new area to find food).
 2. If the obstacle density is higher than that, the seekers navigate to the nearest wall and begin moving along the wall counter-clockwise around the map.
+
 Once a hider comes into range of the seekers, each seeker employs a greedy algorithm to move towards one of the hiders.
 
 ###### Hider
