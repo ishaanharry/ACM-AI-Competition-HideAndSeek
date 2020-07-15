@@ -1,5 +1,12 @@
 This is the bot I made to compete in ACM@UCSD's first AI Competition.  The challenge is presented [here](https://ai.acmucsd.com/).  It is a game of ~~Hide and Seek~~ Cops vs. Citizens where seekers have to find and tag all the hiders and the hiders have to not get tagged within the given time frame.  A bot that is entered in the competition may either be the seeker team or the hider team in any given match.  "kits_pystarter/bot.py" is the main program for the bot.
 
+## Competitors
+These were the other bots in the competition.  At least the ones with actual competitional value.  Most of the bots that were submitted were either just the default bots that came with the starter kit or bots that did nothing.
+- 🥇 1st place: Joe Cai's "[pizza](https://www.youtube.com/watch?v=d0tGBCCE0lc)"
+- 🥈 2nd place: Jeff Xu's "[top ten anime betrayals](https://github.com/Jjx003/ACM-Hide-And-Seek-Bot)"
+- 🥉 3rd place: Kevin He's "[clairvoyant](https://github.com/kevin-he-01/hide-and-seek-bot)"
+- 🎉 4th place: my bot ("[Ultron](https://github.com/ishaanharry/ACM-AI-Competition-HideAndSeek)")
+- 🎉 5th place: Stone Tao's (contest creator) "[breadbot](https://github.com/acmucsd/hide-and-seek-ai/tree/master/breadbot)" (baseline bot)
 
 ## Expected behavior of my bot
 
@@ -23,6 +30,8 @@ I definitely didn't spend enough time on the seeker, seeing as a well-coded seek
 ###### Hider
 As I said before, ~~the Hider is less likely to win~~ the Citizens have no chance against the highly militarized poice force, so spending as much time as I did coding the Hider was probably not super benficial.  I would still try to improve the Hider though.  One thing that I started trying to do (a day or two before the deadline to submit) was to make the hiders move away from the seekers if they got too close.  If you look in the code, I have written an "antiGreedy" method that I never use.  It was meant for this purpose.  Additionally, my check to determine if a hider was sufficiently surrounded by obstacles is very basic.  It only looks at adjacent tiles and is not smart enough to know if there is a very clear exposed line of sight.  A more complex implementation would check if the hider is "boxed in" by following the unit's lines of sight in all directions.  I haven't thought about how I could implement this but I'm sure it can be done.
 
+\
+Although, if you want to see some real improvements, I recommend checking out the bots for the other contestants that I have linked above.  They really put a lot more thought into strategy than I did -_-
 
 ## Final thoughts
 This was a pretty fun competition, even though I didn't win :cry:.  It was certainly better than the MMW that I still have to do.  (I think) I learned a thing or two about pathfinding algorithms, and I gave it my best shot.  I'll be on the lookout for more of these competitions in the future.
